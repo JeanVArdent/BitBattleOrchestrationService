@@ -90,8 +90,6 @@ func newResource() (*resource.Resource, error) {
 		))
 }
 
-var serviceName = semconv.ServiceNameKey.String("test-service")
-
 // Initialize a gRPC connection to be used by both the tracer, meter, & log
 // providers.
 func initConn() (*grpc.ClientConn, error) {

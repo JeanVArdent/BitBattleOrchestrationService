@@ -40,21 +40,6 @@ func main() {
 	}()
 
 	//TESTING CODE
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Handling request",
-			"path", r.URL.Path,
-			"method", r.Method,
-			"remote_addr", r.RemoteAddr,
-		)
-		fmt.Fprintf(w, "Hello World")
-	})
-
-	slog.Info("Starting server", "port", 8080)
-	if err = http.ListenAndServe(":8080", nil); err != nil {
-		slog.Error("Server failed", "error", err)
-		os.Exit(1)
-	}
-
 	name := "orchestration-service"
 	tracer := otel.Tracer(name)
 	meter := otel.Meter(name)
@@ -89,4 +74,19 @@ func main() {
 	}
 
 	slog.Info("Done!")
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Handling request",
+			"path", r.URL.Path,
+			"method", r.Method,
+			"remote_addr", r.RemoteAddr,
+		)
+		fmt.Fprintf(w, "Hello World")
+	})
+
+	slog.Info("Starting server", "port", 8080)
+	if err = http.ListenAndServe(":8080", nil); err != nil {
+		slog.Error("Server failed", "error", err)
+		os.Exit(1)
+	}
 }
