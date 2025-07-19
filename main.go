@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+
 	"log/slog"
 	"net/http"
 	"os"
@@ -54,7 +56,7 @@ func main() {
 
 	runCount, err := meter.Int64Counter("run", metric.WithDescription("The number of times the iteration ran"))
 	if err != nil {
-		slog.Error("Error Encountered",
+		slog.ErrorContext(ctx, "Error Encountered",
 			"error", err)
 	}
 
@@ -67,16 +69,18 @@ func main() {
 	for i := 0; i < 10; i++ {
 		_, iSpan := tracer.Start(ctx, fmt.Sprintf("Sample-%d", i))
 		runCount.Add(ctx, 1, metric.WithAttributes(commonAttrs...))
-		slog.Info(fmt.Sprintf("Doing really hard work (%d / 10)\n", i+1), "count", i+1)
+		slog.InfoContext(ctx, fmt.Sprintf("Doing really hard work (%d / 10)\n", i+1), "count", i+1)
 
 		<-time.After(time.Second)
 		iSpan.End()
 	}
 
-	slog.Info("Done!")
+	slog.InfoContext(ctx, "Done!")
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Handling request",
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		slog.InfoContext(ctx, "Handling request",
 			"path", r.URL.Path,
 			"method", r.Method,
 			"remote_addr", r.RemoteAddr,
@@ -84,8 +88,10 @@ func main() {
 		fmt.Fprintf(w, "Hello World")
 	})
 
-	slog.Info("Starting server", "port", 8080)
-	if err = http.ListenAndServe(":8080", nil); err != nil {
+	handler := otelhttp.NewHandler(mux, "/")
+
+	slog.InfoContext(ctx, "Starting server", "port", 8080)
+	if err = http.ListenAndServe(":8080", handler); err != nil {
 		slog.Error("Server failed", "error", err)
 		os.Exit(1)
 	}
