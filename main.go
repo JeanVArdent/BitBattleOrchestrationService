@@ -30,7 +30,7 @@ func main() {
 
 	otelShutdown, err := setupOTel(ctx)
 	if err != nil {
-		slog.Warn("Otel Setup Failed",
+		slog.WarnContext(ctx, "Otel Setup Failed",
 			"error", err,
 		)
 	}
@@ -38,7 +38,7 @@ func main() {
 	defer func() {
 		err = errors.Join(err, otelShutdown(ctx))
 
-		slog.Info("Application Closing", "error", err)
+		slog.InfoContext(ctx, "Application Closing", "error", err)
 	}()
 
 	//TESTING CODE
@@ -61,21 +61,21 @@ func main() {
 	}
 
 	// Work begins
-	ctx, span := tracer.Start(
+	tCtx, span := tracer.Start(
 		ctx,
 		"CollectorExporter-Example",
 		trace.WithAttributes(commonAttrs...))
 
 	for i := 0; i < 10; i++ {
-		_, iSpan := tracer.Start(ctx, fmt.Sprintf("Sample-%d", i))
+		iCtx, iSpan := tracer.Start(tCtx, fmt.Sprintf("Sample-%d", i))
 		runCount.Add(ctx, 1, metric.WithAttributes(commonAttrs...))
-		slog.InfoContext(ctx, fmt.Sprintf("Doing really hard work (%d / 10)\n", i+1), "count", i+1)
+		slog.InfoContext(iCtx, fmt.Sprintf("Doing really hard work (%d / 10)\n", i+1), "count", i+1)
 
 		<-time.After(time.Second)
 		iSpan.End()
 	}
 
-	slog.InfoContext(ctx, "Done!")
+	slog.InfoContext(tCtx, "Done!")
 
 	<-time.After(time.Second)
 	span.End()
@@ -83,16 +83,24 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		slog.InfoContext(ctx, "Handling request",
+		slog.InfoContext(r.Context(), "Handling request",
 			"path", r.URL.Path,
 			"method", r.Method,
 			"remote_addr", r.RemoteAddr,
 		)
-		runCount.Add(ctx, 1, metric.WithAttributes(commonAttrs...))
+		runCount.Add(r.Context(), 1, metric.WithAttributes(commonAttrs...))
 		fmt.Fprintf(w, "Hello World")
 	})
 
-	handler := otelhttp.NewHandler(mux, "/")
+	attributesFn := func(r *http.Request) []attribute.KeyValue {
+		return []attribute.KeyValue{
+			attribute.String("path", r.URL.Path),
+			attribute.String("method", r.Method),
+			attribute.String("remote_addr", r.RemoteAddr),
+		}
+	}
+
+	handler := otelhttp.NewHandler(mux, "/", otelhttp.WithMetricAttributesFn(attributesFn))
 
 	slog.InfoContext(ctx, "Starting server", "port", 8080)
 	if err = http.ListenAndServe(":8080", handler); err != nil {
