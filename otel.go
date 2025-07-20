@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"os"
+	"time"
 )
 
 func setupOTel(
@@ -138,7 +139,7 @@ func initMeterProvider(ctx context.Context, res *resource.Resource, conn *grpc.C
 	}
 
 	meterProvider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter)),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, sdkmetric.WithInterval(5*time.Second))),
 		sdkmetric.WithResource(res),
 	)
 	otel.SetMeterProvider(meterProvider)
