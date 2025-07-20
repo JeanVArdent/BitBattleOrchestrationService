@@ -1,5 +1,5 @@
 # Build the application
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 LABEL authors="BitxBit"
 LABEL org.opencontainers.image.source=https://github.com/JeanAEckelberg/BitBattleOrchestrationService
 LABEL org.opencontainers.image.description="The Orchestration Service manages the docker contains for the BitBattle System."
