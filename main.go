@@ -85,6 +85,7 @@ func main() {
 			"method", r.Method,
 			"remote_addr", r.RemoteAddr,
 		)
+		runCount.Add(ctx, 1, metric.WithAttributes(commonAttrs...))
 		fmt.Fprintf(w, "Hello World")
 	})
 
