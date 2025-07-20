@@ -65,7 +65,7 @@ func main() {
 		ctx,
 		"CollectorExporter-Example",
 		trace.WithAttributes(commonAttrs...))
-	defer span.End()
+
 	for i := 0; i < 10; i++ {
 		_, iSpan := tracer.Start(ctx, fmt.Sprintf("Sample-%d", i))
 		runCount.Add(ctx, 1, metric.WithAttributes(commonAttrs...))
@@ -76,6 +76,9 @@ func main() {
 	}
 
 	slog.InfoContext(ctx, "Done!")
+
+	<-time.After(time.Second)
+	span.End()
 
 	mux := http.NewServeMux()
 
@@ -93,7 +96,7 @@ func main() {
 
 	slog.InfoContext(ctx, "Starting server", "port", 8080)
 	if err = http.ListenAndServe(":8080", handler); err != nil {
-		slog.Error("Server failed", "error", err)
+		slog.ErrorContext(ctx, "Server failed", "error", err)
 		os.Exit(1)
 	}
 }
