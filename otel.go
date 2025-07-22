@@ -139,7 +139,7 @@ func initMeterProvider(ctx context.Context, res *resource.Resource, conn *grpc.C
 	}
 
 	meterProvider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, sdkmetric.WithInterval(5*time.Second))),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, sdkmetric.WithInterval(500*time.Millisecond))),
 		sdkmetric.WithResource(res),
 	)
 	otel.SetMeterProvider(meterProvider)
