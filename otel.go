@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
+	"time"
+
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -18,9 +22,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"log/slog"
-	"os"
-	"time"
 )
 
 func setupOTel(
@@ -95,7 +96,7 @@ func newResource() (*resource.Resource, error) {
 // providers.
 func initConn() (*grpc.ClientConn, error) {
 	// It connects the OpenTelemetry Collector through local gRPC connection.
-	conn, err := grpc.NewClient("otel-collector:4317",
+	conn, err := grpc.NewClient("otel-collector:4317", // TODO: Make Environment Variables
 		// Note the use of insecure transport here. TLS is recommended in production.
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -169,7 +170,7 @@ func initLoggerProvider(ctx context.Context, res *resource.Resource, conn *grpc.
 	)
 
 	// Create handlers
-	otelLogHandler := otelslog.NewHandler("orchestration-logs",
+	otelLogHandler := otelslog.NewHandler("orchestration-logs", // TODO: Make Environment Variables
 		otelslog.WithLoggerProvider(loggerProvider))
 
 	multiHandler := NewMultiHandler(consoleHandler, otelLogHandler)
