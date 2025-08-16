@@ -25,7 +25,7 @@ jobs:
       - name: Upload Go test results
         uses: actions/upload-artifact@v4
         with:
-          name: Go-test-results-
+          name: Go-test-results
           path: TestResults.json
           retention-days: 90
 
