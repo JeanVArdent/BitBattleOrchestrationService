@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"unicode/utf8"
+
 	"github.com/joho/godotenv"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
@@ -89,7 +91,10 @@ func main() {
 			"remote_addr", r.RemoteAddr,
 		)
 		runCount.Add(r.Context(), 1, metric.WithAttributes(commonAttrs...))
-		fmt.Fprintf(w, "Hello World")
+		_, err = fmt.Fprintf(w, "Hello World")
+		if err != nil {
+			return
+		}
 	})
 
 	attributesFn := func(r *http.Request) []attribute.KeyValue {
@@ -107,4 +112,15 @@ func main() {
 		slog.ErrorContext(ctx, "Server failed", "error", err)
 		os.Exit(1)
 	}
+}
+
+func Reverse(s string) (string, error) {
+	if !utf8.ValidString(s) {
+		return s, errors.New("input is not valid UTF-8")
+	}
+	r := []rune(s)
+	for i, j := 0, len(r)-1; i < len(r)/2; i, j = i+1, j-1 {
+		r[i], r[j] = r[j], r[i]
+	}
+	return string(r), nil
 }
